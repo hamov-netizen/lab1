@@ -1,13 +1,12 @@
 import requests
 from bs4 import BeautifulSoup
-import re
 
 
 def parse_weather():
     url = 'https://world-weather.ru/pogoda/russia/omsk/february-2026/'
 
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
 
     page = requests.get(url, headers=headers)
@@ -18,14 +17,14 @@ def parse_weather():
         return
 
     soup = BeautifulSoup(page.text, 'html.parser')
-
     month_block = soup.find('ul', class_='ww-month')
 
     if not month_block:
         print('Не удалось найти блок с погодой')
         return
 
-    days = month_block.find_all('li', class_=re.compile(r'ww-month-weekend|ww-month-weekdays'))
+    # Вместо re.compile используем список классов
+    days = month_block.find_all('li', class_=['ww-month-weekend', 'ww-month-weekdays'])
 
     results = []
 
@@ -35,27 +34,16 @@ def parse_weather():
             continue
 
         date_div = link.find('div')
-        if not date_div:
-            continue
-        day_number = date_div.text.strip()
+        day_number = date_div.text.strip() if date_div else '?'
 
         temp_span = link.find('span')
-        if temp_span:
-            day_temp = temp_span.text.strip()
-        else:
-            day_temp = 'Нет данных'
+        day_temp = temp_span.text.strip() if temp_span else 'Нет данных'
 
         night_temp_span = link.find('p', class_='ww-month-i-box')
-        if night_temp_span:
-            night_temp = night_temp_span.text.strip()
-        else:
-            night_temp = 'Нет данных'
+        night_temp = night_temp_span.text.strip() if night_temp_span else 'Нет данных'
 
-        weather_icon = link.find('i', class_=re.compile(r'icon-weather'))
-        if weather_icon:
-            weather_desc = weather_icon.get('title', 'Нет данных')
-        else:
-            weather_desc = 'Нет данных'
+        weather_icon = link.find('i', class_='icon-weather')
+        weather_desc = weather_icon.get('title', 'Нет данных') if weather_icon else 'Нет данных'
 
         results.append({
             'date': f'{day_number} февраля',
@@ -64,7 +52,6 @@ def parse_weather():
             'description': weather_desc
         })
 
-    # Сохраняем результаты в файл
     with open('omsk_weather_feb2026.txt', 'w', encoding='utf-8') as f:
         f.write('Погода в Омске за февраль 2026 года:\n')
         f.write('=' * 50 + '\n\n')
@@ -78,8 +65,6 @@ def parse_weather():
 
     print(f'Сохранено {len(results)} записей в файл omsk_weather_feb2026.txt')
 
-
-    return results
 
 if __name__ == '__main__':
     parse_weather()
