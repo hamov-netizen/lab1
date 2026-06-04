@@ -23,7 +23,6 @@ def parse_weather():
         print('Не удалось найти блок с погодой')
         return
 
-    # Вместо re.compile используем список классов
     days = month_block.find_all('li', class_=['ww-month-weekend', 'ww-month-weekdays'])
 
     results = []
